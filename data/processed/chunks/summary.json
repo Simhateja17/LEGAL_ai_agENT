@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-12-07T07:11:02.974Z",
+  "documentsProcessed": 3,
+  "documentsFailed": 0,
+  "totalChunks": 5,
+  "averageChunksPerDocument": 1.7,
+  "averageTokensPerChunk": 643,
+  "configuration": {
+    "targetTokens": 800,
+    "overlapTokens": 75
+  }
+}

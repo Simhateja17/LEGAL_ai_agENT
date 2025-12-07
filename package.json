@@ -8,7 +8,13 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "node test-connection.js",
-    "test:health": "curl http://localhost:3000/api/health"
+    "test:health": "curl http://localhost:3000/api/health",
+    "process:clean": "node scripts/data-processing/01-clean-documents.js",
+    "process:chunk": "node scripts/data-processing/02-chunk-documents.js",
+    "process:embed": "node scripts/data-processing/03-generate-embeddings.js",
+    "process:upload": "node scripts/data-processing/04-upload-to-supabase.js",
+    "process:all": "npm run process:clean && npm run process:chunk && npm run process:embed && npm run process:upload",
+    "process:test": "node scripts/data-processing/01-clean-documents.js --input data/raw --output data/processed/clean && node scripts/data-processing/02-chunk-documents.js --input data/processed/clean --output data/processed/chunks && node scripts/data-processing/03-generate-embeddings.js --input data/processed/chunks/chunks.json --output data/processed/embeddings"
   },
   "keywords": [
     "insurance",

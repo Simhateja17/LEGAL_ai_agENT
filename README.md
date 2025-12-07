@@ -89,12 +89,26 @@ german_insurance_backend/
 │       ├── rollback_001_initial_schema.sql
 │       └── 002_sample_data.sql
 ├── scripts/
+│   ├── test-pipeline.js            # Test data processing pipeline
 │   └── data-processing/            # Data ingestion pipeline
 │       ├── README.md               # Processing guide
-│       ├── 01-clean-documents.js   # Text cleaning (TODO)
-│       ├── 02-chunk-documents.js   # Document chunking (TODO)
-│       ├── 03-generate-embeddings.js # Embedding generation (TODO)
-│       └── 04-upload-to-supabase.js  # Database upload (TODO)
+│       ├── 01-clean-documents.js   # Text cleaning
+│       ├── 02-chunk-documents.js   # Document chunking
+│       ├── 03-generate-embeddings.js # Embedding generation
+│       ├── 04-upload-to-supabase.js  # Database upload
+│       ├── utils/                  # Processing utilities
+│       │   ├── text-cleaner.js     # Text cleaning functions
+│       │   ├── chunker.js          # Chunking algorithms
+│       │   └── progress-tracker.js # Progress tracking
+│       └── logs/                   # Processing logs
+├── data/
+│   ├── raw/                        # Raw insurance documents
+│   │   ├── *.txt                   # Sample documents
+│   │   └── metadata.json           # Document metadata
+│   └── processed/                  # Processed data
+│       ├── clean/                  # Cleaned documents
+│       ├── chunks/                 # Document chunks
+│       └── embeddings/             # Chunks with embeddings
 ├── docs/
 │   ├── architecture.md             # System architecture
 │   ├── data-flow.md                # Data flow diagrams
@@ -198,11 +212,46 @@ npm start
 
 The server will start on `http://localhost:3000`
 
+## 📦 Data Processing Pipeline
+
+### Process Sample Documents
+
+Test the complete data ingestion pipeline:
+
+```bash
+# Run complete test with sample data
+node scripts/test-pipeline.js
+
+# Or run individual steps
+npm run process:clean    # Clean raw documents
+npm run process:chunk    # Chunk cleaned documents
+npm run process:embed    # Generate embeddings
+npm run process:upload   # Upload to Supabase
+```
+
+### Process Your Own Documents
+
+1. **Add your documents** to `data/raw/` directory
+2. **Update metadata** in `data/raw/metadata.json`
+3. **Run the pipeline**:
+```bash
+npm run process:all
+```
+
+See `scripts/data-processing/README.md` for detailed documentation.
+
 ## 🧪 Testing the API
 
 Test the health endpoint:
 ```bash
 curl http://localhost:3000/api/health
+```
+
+Test database connection:
+```bash
+npm test
+# or
+node test-connection.js
 ```
 
 Test a query:
@@ -221,11 +270,11 @@ curl -X POST http://localhost:3000/api/query \
 - ✅ **Task 10 (Day 10)**: Project organization & team coordination
 - ✅ **Task 11 (Day 11)**: Git repository & configuration (.gitignore, package.json)
 - ✅ **Task 12 (Day 12)**: Supabase setup & backend connection
+- ✅ **Task 13 (Day 13)**: Data ingestion pipeline (4 scripts, 3 utilities, tested)
 
 ### In Progress
-- 🔄 **Task 13**: Data ingestion pipeline (see `scripts/data-processing/`)
-- 🔄 **Task 14**: Vertex AI embedding integration
-- 🔄 **Task 15**: RAG pipeline implementation & testing
+- 🔄 **Task 14**: Vertex AI embedding integration (production)
+- 🔄 **Task 15**: RAG pipeline implementation & end-to-end testing
 
 ### Planned
 - 📋 **Task 16+**: Production deployment, monitoring, optimization

@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-12-07T07:11:19.275Z",
+  "totalChunks": 5,
+  "validEmbeddings": 5,
+  "invalidEmbeddings": 0,
+  "batchSize": 100,
+  "batches": 1,
+  "durationSeconds": 0,
+  "chunksPerSecond": "Infinity",
+  "vertexAI": {
+    "projectId": "not-configured",
+    "location": "europe-west3",
+    "model": "textembedding-gecko@003"
+  }
+}

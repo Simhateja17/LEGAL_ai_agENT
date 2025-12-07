@@ -1,0 +1,49 @@
+{
+  "insurers": [
+    {
+      "id": "a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d",
+      "name": "Allianz",
+      "documents": [
+        {
+          "id": "doc-001",
+          "filename": "allianz-krankenversicherung.txt",
+          "title": "Krankenversicherung - Allgemeine Bedingungen",
+          "insuranceType": "health",
+          "documentType": "terms",
+          "sourceUrl": "https://www.allianz.de/gesundheit/avb.pdf",
+          "language": "de"
+        }
+      ]
+    },
+    {
+      "id": "b2c3d4e5-f6a7-4b5c-8d9e-0f1a2b3c4d5e",
+      "name": "HUK-COBURG",
+      "documents": [
+        {
+          "id": "doc-002",
+          "filename": "huk-autoversicherung.txt",
+          "title": "Kfz-Versicherung - Produktinformation",
+          "insuranceType": "auto",
+          "documentType": "product-info",
+          "sourceUrl": "https://www.huk.de/kfz-versicherung.html",
+          "language": "de"
+        }
+      ]
+    },
+    {
+      "id": "c3d4e5f6-a7b8-4c5d-8e9f-0a1b2c3d4e5f",
+      "name": "ERGO",
+      "documents": [
+        {
+          "id": "doc-003",
+          "filename": "ergo-hausratversicherung.txt",
+          "title": "Hausratversicherung - Produktdetails",
+          "insuranceType": "home",
+          "documentType": "product-details",
+          "sourceUrl": "https://www.ergo.de/hausrat",
+          "language": "de"
+        }
+      ]
+    }
+  ]
+}
