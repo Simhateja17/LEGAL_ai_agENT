@@ -1,0 +1,241 @@
+# German Insurance AI Agent Backend
+
+A backend API service for an intelligent insurance assistant that uses Retrieval-Augmented Generation (RAG) to answer questions about German insurance products and policies.
+
+## 🎯 Project Purpose
+
+This backend powers an AI-driven insurance assistant that:
+- Answers customer questions about insurance products
+- Retrieves relevant information from a vector database
+- Provides accurate, context-aware responses using LLM technology
+- Handles queries about German insurance companies and their offerings
+
+## 🛠️ Tech Stack
+
+- **Runtime**: Node.js with ES Modules
+- **Framework**: Express.js
+- **Database**: Supabase with pgvector extension
+- **AI/ML**: Google Vertex AI (Embeddings + LLM)
+- **Architecture**: RAG (Retrieval-Augmented Generation)
+
+## 📡 API Endpoints
+
+### Health Check
+```
+GET /api/health
+```
+Returns server health status.
+
+**Response:**
+```json
+{
+  "status": "ok"
+}
+```
+
+### Query Insurance Information
+```
+POST /api/query
+```
+Submit a question about insurance products.
+
+**Request Body:**
+```json
+{
+  "question": "What types of health insurance are available in Germany?"
+}
+```
+
+**Response:**
+```json
+{
+  "question": "What types of health insurance are available in Germany?",
+  "answer": "AI-generated answer based on retrieved context",
+  "sources": []
+}
+```
+
+## 📁 Project Structure
+
+```
+german_insurance_backend/
+├── src/
+│   ├── index.js                    # Express server entry point
+│   ├── routes/
+│   │   ├── index.js                # Main router
+│   │   ├── query.routes.js         # Query endpoint routes
+│   │   └── insurers.routes.js      # Insurer management routes
+│   ├── controllers/
+│   │   ├── query.controller.js     # Handles query requests
+│   │   └── insurers.controller.js  # Handles insurer operations
+│   ├── services/
+│   │   ├── rag.service.js          # RAG pipeline orchestration
+│   │   ├── embedding.service.js    # Text embedding generation
+│   │   └── llm.service.js          # LLM interaction
+│   ├── middleware/                 # Express middleware
+│   │   ├── errorHandler.js         # Global error handling
+│   │   ├── validation.js           # Request validation
+│   │   └── requestLogger.js        # Request logging
+│   ├── db/
+│   │   └── supabase.js             # Supabase client configuration
+│   └── utils/                      # Utility functions
+│       ├── retry.js                # Retry with backoff
+│       └── timeout.js              # Timeout utilities
+├── db/
+│   ├── schema.sql                  # Database schema
+│   ├── verify-pgvector.sql         # pgvector verification
+│   └── migrations/                 # Migration scripts
+│       ├── 001_initial_schema.sql
+│       ├── rollback_001_initial_schema.sql
+│       └── 002_sample_data.sql
+├── scripts/
+│   └── data-processing/            # Data ingestion pipeline
+│       ├── README.md               # Processing guide
+│       ├── 01-clean-documents.js   # Text cleaning (TODO)
+│       ├── 02-chunk-documents.js   # Document chunking (TODO)
+│       ├── 03-generate-embeddings.js # Embedding generation (TODO)
+│       └── 04-upload-to-supabase.js  # Database upload (TODO)
+├── docs/
+│   ├── architecture.md             # System architecture
+│   ├── data-flow.md                # Data flow diagrams
+│   ├── day1-architecture.md        # Architecture & conventions
+│   ├── day2-schema-design.md       # Database schema design
+│   ├── day3-patterns.md            # Express patterns guide
+│   ├── day4-rag-diagrams.md        # RAG pipeline diagrams
+│   ├── day9-schema-finalization.md # Schema finalization & migrations
+│   └── supabase-setup.md           # Database setup guide
+├── test-connection.js              # Database connection test
+├── test-query.js                   # API query test
+├── .env.example                    # Environment template
+├── package.json
+└── README.md
+```
+
+## 🏗️ Architecture
+
+This project follows a **layered architecture** with clear separation of concerns:
+
+### Route → Controller → Service → Database Pattern
+
+```
+HTTP Request
+     ↓
+[Route + Middleware]    ← Define endpoints, attach validation
+     ↓
+[Controller]            ← Handle HTTP (req/res)
+     ↓
+[Service Layer]         ← Business logic & orchestration
+     ↓
+[Database/APIs]         ← Data access (Supabase, Vertex AI)
+     ↓
+HTTP Response
+```
+
+**Key Principles**:
+- **Routes**: Define HTTP endpoints and middleware
+- **Controllers**: Handle request/response, delegate to services
+- **Services**: Contain business logic, call external APIs
+- **Middleware**: Cross-cutting concerns (logging, errors, validation)
+- **Utils**: Reusable helper functions
+
+For detailed architecture documentation, see [`docs/day1-architecture.md`](docs/day1-architecture.md)
+
+## 🔄 RAG Pipeline Explanation
+
+The Retrieval-Augmented Generation pipeline works in four steps:
+
+1. **Embedding Generation**: User questions are converted into vector embeddings using Vertex AI's embedding model
+2. **Semantic Search**: The embedding is used to query Supabase/pgvector for the most relevant insurance document chunks
+3. **Context Building**: Retrieved chunks are formatted into a prompt with the original question
+4. **LLM Response**: The prompt is sent to Vertex AI's LLM, which generates a contextually accurate answer
+
+This approach ensures responses are grounded in actual insurance documentation rather than relying solely on the LLM's training data.
+
+**📊 For detailed visual diagrams and flow documentation, see:**
+- [`docs/day4-rag-diagrams.md`](docs/day4-rag-diagrams.md) - Complete RAG pipeline diagrams
+- [`docs/data-flow.md`](docs/data-flow.md) - Detailed data flow visualization
+- [`docs/architecture.md`](docs/architecture.md) - System architecture overview
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v18 or higher)
+- Supabase account with pgvector enabled
+- Google Cloud account with Vertex AI access
+
+### Installation
+
+1. Clone the repository
+```bash
+cd german_insurance_backend
+```
+
+2. Install dependencies
+```bash
+npm install
+```
+
+3. Configure environment variables
+
+Create a `.env` file in the root directory:
+```env
+PORT=3000
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_SERVICE_KEY=your_supabase_service_key
+```
+
+4. Start the server
+
+Development mode (with auto-reload):
+```bash
+npm run dev
+```
+
+Production mode:
+```bash
+npm start
+```
+
+The server will start on `http://localhost:3000`
+
+## 🧪 Testing the API
+
+Test the health endpoint:
+```bash
+curl http://localhost:3000/api/health
+```
+
+Test a query:
+```bash
+curl -X POST http://localhost:3000/api/query \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is private health insurance?"}'
+```
+
+## 📝 Development Status
+
+Current implementation includes:
+- ✅ Express server setup
+- ✅ Route structure
+- ✅ Controller layer
+- ✅ Service layer architecture
+- ✅ Database schema design (Day 2)
+- ✅ Middleware patterns (Day 3)
+- ✅ RAG pipeline diagrams (Day 4)
+- ✅ Schema finalization & migrations (Day 9)
+- 🚧 Vertex AI embedding integration (TODO)
+- 🚧 Supabase vector search (TODO)
+- 🚧 Vertex AI LLM integration (TODO)
+## 📚 Documentation
+
+- **Architecture**: [`docs/day1-architecture.md`](docs/day1-architecture.md) - Complete architecture guide
+- **Database Schema**: [`docs/day2-schema-design.md`](docs/day2-schema-design.md) - Table designs & pgvector
+- **Express Patterns**: [`docs/day3-patterns.md`](docs/day3-patterns.md) - Middleware & async patterns
+- **RAG Pipeline**: [`docs/day4-rag-diagrams.md`](docs/day4-rag-diagrams.md) - Visual diagrams & data flow
+- **Schema Finalization**: [`docs/day9-schema-finalization.md`](docs/day9-schema-finalization.md) - Migrations & implementation
+- **Supabase Setup**: [`docs/supabase-setup.md`](docs/supabase-setup.md) - Database configurationdata flow
+- **Supabase Setup**: [`docs/supabase-setup.md`](docs/supabase-setup.md) - Database configuration
+
+## 🤝 Contributing
+
+This is a backend service for the German Insurance AI Agent project. For questions or contributions, please refer to the main project documentation.
