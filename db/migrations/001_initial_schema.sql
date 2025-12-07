@@ -192,6 +192,20 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Function to check if pgvector extension is installed
+CREATE OR REPLACE FUNCTION check_pgvector_extension()
+RETURNS BOOLEAN AS $$
+DECLARE
+  extension_exists BOOLEAN;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM pg_extension WHERE extname = 'vector'
+  ) INTO extension_exists;
+  
+  RETURN extension_exists;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Get document context by retrieving surrounding chunks
 CREATE OR REPLACE FUNCTION get_document_context(
   target_chunk_id UUID,
