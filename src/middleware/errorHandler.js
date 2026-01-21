@@ -1,62 +1,88 @@
-// Global error handling middleware for graceful degradation
-// Handles timeouts, API failures, and unexpected errors
+import logger from '../utils/logger.js';
+import analytics from '../utils/analytics.js';
 
-export const errorHandler = (err, req, res, next) => {
-  console.error('Error:', err);
-
+// Global error handling middleware
+const errorHandler = (err, req, res, next) => {
+  // Log error
+  logger.logError(err, req);
+  
+  // Track error in analytics
+  const endpoint = req ? `${req.method} ${req.path}` : 'unknown';
+  analytics.trackError(err, endpoint);
+  
+  // Default status code
+  const statusCode = err.statusCode || 500;
+  
+  // Determine error type and response
+  let errorResponse = {
+    success: false,
+    error: err.name || 'Error',
+    message: err.message || 'An unexpected error occurred',
+    timestamp: new Date().toISOString(),
+    path: req ? req.path : undefined
+  };
+  
   // Handle specific error types
   if (err.name === 'ValidationError') {
-    return res.status(400).json({
-      error: 'Validation Error',
-      message: err.message,
-      details: err.details || null
-    });
+    errorResponse.error = 'Validation Error';
+    errorResponse.details = err.details || null;
+    return res.status(400).json(errorResponse);
   }
-
+  
   if (err.name === 'TimeoutError') {
-    return res.status(504).json({
-      error: 'Request Timeout',
-      message: 'The AI service took too long to respond. Please try again.',
-      fallback: 'Service temporarily unavailable'
-    });
+    errorResponse.error = 'Request Timeout';
+    errorResponse.message = 'The request took too long to process. Please try again.';
+    return res.status(504).json(errorResponse);
   }
-
+  
   if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
-    return res.status(503).json({
-      error: 'Service Unavailable',
-      message: 'Unable to connect to external services. Please try again later.',
-      fallback: 'System is experiencing connectivity issues'
-    });
+    errorResponse.error = 'Service Unavailable';
+    errorResponse.message = 'Unable to connect to external services. Please try again later.';
+    return res.status(503).json(errorResponse);
   }
-
-  // AI/LLM specific errors
-  if (err.statusCode === 429) {
-    return res.status(429).json({
-      error: 'Rate Limit Exceeded',
-      message: 'Too many requests. Please try again in a moment.',
-      retryAfter: err.retryAfter || 60
-    });
+  
+  // Rate limit errors
+  if (err.statusCode === 429 || err.name === 'RateLimitExceeded') {
+    errorResponse.error = 'Rate Limit Exceeded';
+    errorResponse.message = 'Too many requests. Please try again later.';
+    errorResponse.retryAfter = err.retryAfter || 60;
+    return res.status(429).json(errorResponse);
   }
-
-  if (err.statusCode === 500 || err.name === 'InternalServerError') {
-    return res.status(500).json({
-      error: 'Internal Server Error',
-      message: 'An unexpected error occurred while processing your request.',
-      fallback: 'Please try again or contact support if the issue persists'
-    });
+  
+  // Database errors
+  if (err.code === 'PGRST' || err.name === 'DatabaseError') {
+    errorResponse.error = 'Database Error';
+    errorResponse.message = 'A database error occurred. Please try again.';
+    return res.status(503).json(errorResponse);
   }
-
-  // Default error response
-  res.status(err.statusCode || 500).json({
-    error: err.name || 'Server Error',
-    message: err.message || 'An unexpected error occurred',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-  });
+  
+  // AI/LLM service errors
+  if (err.name === 'AIServiceError') {
+    errorResponse.error = 'AI Service Error';
+    errorResponse.message = 'The AI service encountered an error. Please try again.';
+    return res.status(503).json(errorResponse);
+  }
+  
+  // Don't expose internal error details in production
+  if (process.env.NODE_ENV === 'production') {
+    errorResponse.message = 'An internal server error occurred';
+    delete errorResponse.details;
+    delete err.stack;
+  } else {
+    // Include stack trace in development
+    errorResponse.stack = err.stack;
+  }
+  
+  // Send error response
+  res.status(statusCode).json(errorResponse);
 };
 
 // Async error wrapper to catch errors in async route handlers
-export const asyncHandler = (fn) => {
+const asyncHandler = (fn) => {
   return (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 };
+
+export { errorHandler, asyncHandler };
+export default errorHandler;

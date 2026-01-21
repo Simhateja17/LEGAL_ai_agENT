@@ -5,16 +5,22 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
+    "build": "echo 'No build step required for Node.js backend' && exit 0",
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "node test-connection.js",
+    "test": "jest tests/",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "test:health": "curl http://localhost:3000/api/health",
     "process:clean": "node scripts/data-processing/01-clean-documents.js",
     "process:chunk": "node scripts/data-processing/02-chunk-documents.js",
     "process:embed": "node scripts/data-processing/03-generate-embeddings.js",
     "process:upload": "node scripts/data-processing/04-upload-to-supabase.js",
     "process:all": "npm run process:clean && npm run process:chunk && npm run process:embed && npm run process:upload",
-    "process:test": "node scripts/data-processing/01-clean-documents.js --input data/raw --output data/processed/clean && node scripts/data-processing/02-chunk-documents.js --input data/processed/clean --output data/processed/chunks && node scripts/data-processing/03-generate-embeddings.js --input data/processed/chunks/chunks.json --output data/processed/embeddings"
+    "process:test": "node scripts/data-processing/01-clean-documents.js --input data/raw --output data/processed/clean && node scripts/data-processing/02-chunk-documents.js --input data/processed/clean --output data/processed/chunks && node scripts/data-processing/03-generate-embeddings.js --input data/processed/chunks/chunks.json --output data/processed/embeddings",
+    "db:indexes": "psql $DATABASE_URL -f db/create-indexes.sql",
+    "logs:clear": "rm -f logs/*.log",
+    "stats": "curl http://localhost:3000/api/stats | jq"
   },
   "keywords": [
     "insurance",
@@ -27,13 +33,19 @@
   "author": "Poojitha",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2",
     "@supabase/supabase-js": "^2.39.0",
+    "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "cors": "^2.8.5"
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.2.1",
+    "express-timeout-handler": "^2.2.2",
+    "node-cache": "^5.1.2",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2"
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.4"
   },
   "engines": {
     "node": ">=18.0.0",

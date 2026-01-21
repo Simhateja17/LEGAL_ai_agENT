@@ -1,45 +1,114 @@
 /**
- * Supabase Client Configuration
- * 
- * Initializes and exports the Supabase client for database operations.
- * Requires environment variables:
- * - SUPABASE_URL: Project URL from Supabase dashboard
- * - SUPABASE_KEY: Anon or service role key
+ * Supabase Database Configuration
+ * Handles connection to Supabase database with connection pooling
  */
 
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
+import config from '../config/index.js';
 
-// Load environment variables
-dotenv.config();
-
-// Validate required environment variables
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
-
-if (!supabaseUrl) {
-  throw new Error('Missing SUPABASE_URL environment variable. Please check your .env file.');
+// Validate environment variables
+if (!config.supabase.url || (!config.supabase.key && !config.supabase.serviceKey)) {
+  console.warn('⚠️  Supabase credentials not configured. Database features will be limited.');
 }
 
-if (!supabaseKey) {
-  throw new Error('Missing SUPABASE_KEY environment variable. Please check your .env file.');
-}
+// Use service key for server-side operations (allows RPC calls and bypasses RLS)
+const supabaseKey = config.supabase.serviceKey || config.supabase.key;
 
-// Create Supabase client with configuration
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  auth: {
-    persistSession: false, // Disable session persistence for backend
-    autoRefreshToken: false, // Disable auto-refresh for backend
-  },
-  db: {
-    schema: 'public', // Use public schema
-  },
-});
+// Create Supabase client with connection pooling
+const supabase = config.supabase.url && supabaseKey 
+  ? createClient(
+      config.supabase.url,
+      supabaseKey,
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        },
+        db: {
+          schema: 'public'
+        },
+        global: {
+          headers: {
+            'X-Client-Info': 'german-legal-chatbot/1.0.0'
+          }
+        },
+        // Connection pooling settings
+        realtime: {
+          params: {
+            eventsPerSecond: 10
+          }
+        }
+      }
+    )
+  : null;
 
-// Log connection status (only in development)
-if (process.env.NODE_ENV === 'development') {
-  console.log('✓ Supabase client initialized');
-  console.log(`  URL: ${supabaseUrl.substring(0, 30)}...`);
-}
+// Connection pool statistics
+let poolStats = {
+  totalQueries: 0,
+  activeQueries: 0,
+  failedQueries: 0,
+  avgQueryTime: 0,
+  queryTimes: []
+};
+
+// Wrap query execution to track statistics
+const executeQuery = async (queryFn) => {
+  const startTime = Date.now();
+  poolStats.activeQueries++;
+  poolStats.totalQueries++;
+  
+  try {
+    const result = await queryFn();
+    const queryTime = Date.now() - startTime;
+    
+    // Track query times
+    poolStats.queryTimes.push(queryTime);
+    if (poolStats.queryTimes.length > 100) {
+      poolStats.queryTimes.shift();
+    }
+    
+    // Update average
+    poolStats.avgQueryTime = 
+      poolStats.queryTimes.reduce((a, b) => a + b, 0) / poolStats.queryTimes.length;
+    
+    poolStats.activeQueries--;
+    return result;
+  } catch (error) {
+    poolStats.failedQueries++;
+    poolStats.activeQueries--;
+    throw error;
+  }
+};
+
+// Get pool statistics
+const getPoolStats = () => {
+  return {
+    totalQueries: poolStats.totalQueries,
+    activeQueries: poolStats.activeQueries,
+    failedQueries: poolStats.failedQueries,
+    avgQueryTime: Math.round(poolStats.avgQueryTime),
+    successRate: poolStats.totalQueries > 0 
+      ? ((poolStats.totalQueries - poolStats.failedQueries) / poolStats.totalQueries * 100).toFixed(2) + '%'
+      : '100%'
+  };
+};
+
+// Reset pool statistics
+const resetPoolStats = () => {
+  poolStats = {
+    totalQueries: 0,
+    activeQueries: 0,
+    failedQueries: 0,
+    avgQueryTime: 0,
+    queryTimes: []
+  };
+};
+
+export {
+  supabase,
+  executeQuery,
+  getPoolStats,
+  resetPoolStats
+};
 
 export default supabase;

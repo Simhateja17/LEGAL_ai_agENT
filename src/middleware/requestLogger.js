@@ -1,27 +1,31 @@
-// Request logging middleware for monitoring and debugging
+import logger from '../utils/logger.js';
+import analytics from '../utils/analytics.js';
 
-export const requestLogger = (req, res, next) => {
+// Request logging middleware
+const requestLogger = (req, res, next) => {
   const startTime = Date.now();
   
   // Log incoming request
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  logger.logRequest(req);
   
-  // Log request body for POST/PUT requests
-  if (req.method === 'POST' || req.method === 'PUT') {
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
-  }
-
-  // Capture original end function
-  const originalEnd = res.end;
-
-  // Override res.end to log response
-  res.end = function(chunk, encoding) {
-    res.end = originalEnd;
-    res.end(chunk, encoding);
-    
+  // Override res.json to capture response
+  const originalJson = res.json.bind(res);
+  res.json = function(body) {
     const duration = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
+    
+    // Log response
+    logger.logResponse(req, res, duration, {
+      responseSize: JSON.stringify(body).length
+    });
+    
+    // Track analytics
+    analytics.trackRequest(req, res, duration);
+    
+    return originalJson(body);
   };
-
+  
   next();
 };
+
+export { requestLogger };
+export default requestLogger;

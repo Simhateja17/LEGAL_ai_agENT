@@ -1,11 +1,12 @@
-import { Router } from 'express';
-import { handleQuery } from '../controllers/query.controller.js';
-import { validateQuery } from '../middleware/validation.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
+import express from 'express';
+const router = express.Router();
+import { searchQuery } from '../controllers/query.controller.js';
+import { validateSearchQuery } from '../middleware/validation.js';
 
-const router = Router();
-
-// POST /api/query - Submit insurance question with validation
-router.post('/', validateQuery, asyncHandler(handleQuery));
+/**
+ * GET /api/query/search?q=test&insurance_type=krankenversicherung
+ * Search for documents using RAG
+ */
+router.get('/search', validateSearchQuery, searchQuery);
 
 export default router;

@@ -1,14 +1,11 @@
 import express from 'express';
-import { getInsurers, getInsurerById } from '../controllers/insurers.controller.js';
-import { validateInsurerId } from '../middleware/validation.js';
-import { asyncHandler } from '../middleware/errorHandler.js';
-
 const router = express.Router();
+import { getAllInsurers } from '../controllers/insurers.controller.js';
 
-// GET /api/insurers - List all insurers
-router.get('/', asyncHandler(getInsurers));
-
-// GET /api/insurers/:id - Get specific insurer by ID
-router.get('/:id', validateInsurerId, asyncHandler(getInsurerById));
+/**
+ * GET /api/insurers/
+ * Get all insurers
+ */
+router.get('/', getAllInsurers);
 
 export default router;

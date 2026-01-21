@@ -1,75 +1,28 @@
-import supabase from '../db/supabase.js';
-import { withTimeout } from '../utils/timeout.js';
-
 /**
- * RESTful API pattern for insurers resource
- * Demonstrates Controller → Database pattern
+ * Get all insurers
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
  */
-
-// GET /api/insurers - List all insurers
-export const getInsurers = async (req, res) => {
-  const { type, limit = 50 } = req.query;
-  
-  // Query with timeout
-  let query = supabase
-    .from('insurers')
-    .select('id, name, description, insurance_types, website')
-    .limit(parseInt(limit));
-  
-  if (type) {
-    query = query.contains('insurance_types', [type]);
+export const getAllInsurers = async (req, res) => {
+  try {
+    // Mock insurers data - will be replaced with database query
+    const insurers = [
+      { id: 1, name: 'Allianz', types: ['krankenversicherung', 'lebensversicherung'] },
+      { id: 2, name: 'ERGO', types: ['hausratversicherung'] },
+      { id: 3, name: 'AXA', types: ['kfz-versicherung'] }
+    ];
+    
+    res.status(200).json({
+      success: true,
+      data: insurers,
+      count: insurers.length
+    });
+  } catch (error) {
+    console.error('Error in getAllInsurers:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error',
+      message: error.message
+    });
   }
-  
-  const { data, error } = await withTimeout(
-    query,
-    5000,
-    'Database query timed out'
-  );
-  
-  if (error) {
-    throw new Error(`Failed to fetch insurers: ${error.message}`);
-  }
-  
-  // RESTful response
-  res.json({
-    success: true,
-    data: data || [],
-    metadata: {
-      count: data?.length || 0,
-      limit: parseInt(limit)
-    }
-  });
 };
-
-// GET /api/insurers/:id - Get specific insurer
-export const getInsurerById = async (req, res) => {
-  const { id } = req.params; // Already validated by middleware
-  
-  const { data, error } = await withTimeout(
-    supabase
-      .from('insurers')
-      .select('*')
-      .eq('id', id)
-      .single(),
-    5000,
-    'Database query timed out'
-  );
-  
-  if (error) {
-    if (error.code === 'PGRST116') {
-      // Not found
-      return res.status(404).json({
-        success: false,
-        error: 'Insurer not found'
-      });
-    }
-    throw new Error(`Failed to fetch insurer: ${error.message}`);
-  }
-  
-  res.json({
-    success: true,
-    data
-  });
-};
-
-export default { getInsurers, getInsurerById };
