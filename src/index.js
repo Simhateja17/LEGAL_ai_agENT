@@ -41,12 +41,17 @@ app.get('*', (req, res) => {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`\n🌐 Open your browser and go to: http://localhost:${PORT}`);
-  console.log(`📋 API Endpoint: http://localhost:${PORT}/api/query/search`);
-});
+// Export for Vercel serverless
+export default app;
+
+// Start server only in non-serverless environment
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`\n🌐 Open your browser and go to: http://localhost:${PORT}`);
+    console.log(`📋 API Endpoint: http://localhost:${PORT}/api/query/search`);
+  });
+}
 
 export default app;
