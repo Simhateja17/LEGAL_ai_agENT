@@ -41,9 +41,6 @@ app.get('*', (req, res) => {
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
-// Export for Vercel serverless
-export default app;
-
 // Start server only in non-serverless environment
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
   app.listen(PORT, () => {
@@ -54,4 +51,5 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
   });
 }
 
+// Export for Vercel serverless
 export default app;

@@ -1,26 +1,41 @@
 import winston from 'winston';
 import config from '../config/index.js';
 
-// Define log format
-const logFormat = winston.format.combine(
+// Define log format for files (JSON)
+const fileLogFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
   winston.format.splat(),
   winston.format.json()
 );
 
+// Define log format for console (human-readable)
+const consoleLogFormat = winston.format.combine(
+  winston.format.colorize(),
+  winston.format.timestamp({ format: 'HH:mm:ss' }),
+  winston.format.printf(({ level, message, timestamp, ...metadata }) => {
+    let msg = `${timestamp} ${level}: ${message}`;
+    
+    // Only show metadata if it's meaningful (not default service field)
+    const keys = Object.keys(metadata).filter(k => k !== 'service');
+    if (keys.length > 0) {
+      const metaStr = keys.map(k => `${k}=${JSON.stringify(metadata[k])}`).join(' ');
+      msg += ` [${metaStr}]`;
+    }
+    
+    return msg;
+  })
+);
+
 // Create logger instance
 const logger = winston.createLogger({
   level: config.logging?.level || 'info',
-  format: logFormat,
+  format: fileLogFormat,
   defaultMeta: { service: 'german-insurance-api' },
   transports: [
     // Console transport
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
+      format: consoleLogFormat
     }),
     // File transport for errors
     new winston.transports.File({ 

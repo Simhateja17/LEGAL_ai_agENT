@@ -267,11 +267,7 @@ async function supabaseVectorSearch(queryEmbedding, options = {}) {
     // Convert embedding array to the format Supabase expects for vector (1536 dimensions)
     const embeddingString = `[${queryEmbedding.join(',')}]`;
     
-    logger.info('Searching documents table with vector similarity...', {
-      embeddingLength: queryEmbedding.length,
-      threshold,
-      maxResults
-    });
+    logger.info(`Vector search: embedding=${queryEmbedding.length}d, threshold=${threshold}, limit=${maxResults}`);
     
     // Try using the search_documents RPC function first
     const { data, error } = await supabase.rpc('search_documents', {
@@ -281,7 +277,7 @@ async function supabaseVectorSearch(queryEmbedding, options = {}) {
     });
     
     if (error) {
-      logger.warn('RPC search_documents failed, trying match_documents', { error: error.message });
+      logger.warn(`RPC search_documents failed: ${error.message}`);
       
       // Try alternative RPC function name
       const { data: data2, error: error2 } = await supabase.rpc('match_documents', {
@@ -291,7 +287,7 @@ async function supabaseVectorSearch(queryEmbedding, options = {}) {
       });
       
       if (error2) {
-        logger.warn('RPC match_documents also failed, using text search', { error: error2.message });
+        logger.warn(`RPC match_documents failed: ${error2.message}, falling back to text search`);
         return await textBasedSearch(options.originalQuery || '', maxResults);
       }
       
@@ -336,10 +332,7 @@ function transformResults(data) {
     };
   });
 
-  logger.info('Supabase vector search completed', {
-    resultsCount: results.length,
-    topScore: results[0]?.similarity?.toFixed(4)
-  });
+  logger.info(`Found ${results.length} results, top score: ${results[0]?.similarity?.toFixed(4) || 'N/A'}`);
 
   return results;
 }
@@ -443,12 +436,7 @@ async function textBasedSearch(query, maxResults = 10) {
       searchTerm = query.substring(0, 30);
     }
     
-    logger.info('Performing text-based search', { 
-      keywords: keywords.slice(0, 5), 
-      searchTerm,
-      paragraphNumbers,
-      maxResults 
-    });
+    logger.info(`Text search: "${searchTerm}" (keywords: ${keywords.slice(0, 3).join(', ')})`);
     
     // Try text search RPC first
     const { data: rpcData, error: rpcError } = await supabase.rpc('search_german_laws_text', {
@@ -478,7 +466,7 @@ async function textBasedSearch(query, maxResults = 10) {
     
     // Fallback: Direct ilike query on Supabase documents table
     if (rpcError) {
-      logger.info('RPC failed, trying direct ilike search', { searchTerm });
+      logger.info(`Direct search for: ${searchTerm}`);
       
       const { data: iLikeData, error: iLikeError } = await supabase
         .from('documents')
@@ -487,7 +475,7 @@ async function textBasedSearch(query, maxResults = 10) {
         .limit(maxResults);
       
       if (!iLikeError && iLikeData && iLikeData.length > 0) {
-        logger.info('Direct ilike search succeeded', { count: iLikeData.length });
+        logger.info(`Found ${iLikeData.length} results via direct search`);
         return iLikeData.map((doc, index) => {
           let metadata = doc.metadata;
           if (typeof metadata === 'string') {
@@ -506,7 +494,7 @@ async function textBasedSearch(query, maxResults = 10) {
         });
       }
       
-      logger.warn('Direct ilike search failed', { error: iLikeError?.message });
+      logger.warn(`Direct search failed: ${iLikeError?.message}`);
     }
     
     return getMockResults(query, maxResults);
@@ -569,7 +557,7 @@ async function searchDocuments(query, insuranceType = null, options = {}) {
     throw new Error('Query must be a non-empty string');
   }
 
-  logger.info('Starting RAG pipeline', { query: query.substring(0, 100), insuranceType });
+  logger.info(`RAG: "${query.substring(0, 60)}${query.length > 60 ? '...' : ''}" [type=${insuranceType || 'all'}]`);
 
   try {
     // Step 1: Generate query embedding
@@ -653,21 +641,11 @@ async function searchDocuments(query, insuranceType = null, options = {}) {
       }
     };
 
-    logger.info('RAG pipeline completed', {
-      query: query.substring(0, 50),
-      resultsCount: searchResults.length,
-      totalTime,
-      embeddingTime,
-      searchTime,
-      llmTime
-    });
+    logger.info(`RAG complete: ${searchResults.length} results, ${totalTime}ms (embed=${embeddingTime}ms, search=${searchTime}ms, llm=${llmTime}ms)`);
 
     return result;
   } catch (error) {
-    logger.error('RAG pipeline failed', {
-      query: query.substring(0, 100),
-      error: error.message
-    });
+    logger.error(`RAG failed: ${error.message} (query: "${query.substring(0, 50)}...")`);
     throw error;
   }
 }

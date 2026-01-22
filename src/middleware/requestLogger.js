@@ -5,18 +5,16 @@ import analytics from '../utils/analytics.js';
 const requestLogger = (req, res, next) => {
   const startTime = Date.now();
   
-  // Log incoming request
-  logger.logRequest(req);
+  // Log incoming request - simplified
+  logger.info(`${req.method} ${req.path}${Object.keys(req.query).length > 0 ? ` [${new URLSearchParams(req.query).toString()}]` : ''}`);
   
   // Override res.json to capture response
   const originalJson = res.json.bind(res);
   res.json = function(body) {
     const duration = Date.now() - startTime;
     
-    // Log response
-    logger.logResponse(req, res, duration, {
-      responseSize: JSON.stringify(body).length
-    });
+    // Log response - simplified
+    logger.info(`${res.statusCode} ${req.method} ${req.path} - ${duration}ms`);
     
     // Track analytics
     analytics.trackRequest(req, res, duration);
